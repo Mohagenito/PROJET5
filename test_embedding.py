@@ -1,10 +1,10 @@
 import unittest
 import pickle
+from sentence_transformers import SentenceTransformer
 
 # Charger le modèle SBERT avec pickle
 with open('sbert_model.pkl', 'rb') as file:
     sbert_model = pickle.load(file)
-
 
 class TestEmbeddingFunction(unittest.TestCase):
     
@@ -19,7 +19,7 @@ class TestEmbeddingFunction(unittest.TestCase):
             # If any exception is raised, the test should fail
             self.fail(f"sbert_model.encode([question]) raised an exception: {e}")
     
-    def test_emedding_sentences(self):
+    def test_embedding_sentences(self):
         """
         Test embedding of several sentences
         """
@@ -28,7 +28,7 @@ class TestEmbeddingFunction(unittest.TestCase):
             embeddings = sbert_model.encode(questions)
         except Exception as e:
             # If any exception is raised, the test should fail
-            self.fail(f"ssbert_model.encode(questions) raised an exception: {e}")
-    
+            self.fail(f"sbert_model.encode(questions) raised an exception: {e}")
+
 if __name__ == '__main__':
     unittest.main()
