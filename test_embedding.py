@@ -1,10 +1,12 @@
 import unittest
-import pickle
+import joblib  # Utiliser joblib pour charger le modèle
 from sentence_transformers import SentenceTransformer
 
-# Charger le modèle SBERT avec pickle
-with open('sbert_model.pkl', 'rb') as file:
-    sbert_model = pickle.load(file)
+# Charger le modèle SBERT avec joblib
+try:
+    sbert_model = joblib.load('sbert_model.pkl')
+except FileNotFoundError:
+    print("Le fichier 'sbert_model.pkl' est introuvable. Vérifiez le chemin d'accès et réessayez.")
 
 class TestEmbeddingFunction(unittest.TestCase):
     
