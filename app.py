@@ -1,6 +1,10 @@
 from flask import Flask, request, jsonify  # Importation des modules nécessaires de Flask pour créer l'application web.
 import joblib  # Importation de joblib pour charger des modèles machine learning pré-entraînés.
 import numpy as np  # Importation de NumPy, souvent utilisé pour manipuler des tableaux et des vecteurs.
+import os  # Importation du module os pour gérer les chemins de fichiers.
+
+# Créer une instance de l'application Flask
+app = Flask(__name__)
 
 # Charger les modèles
 try:
@@ -18,9 +22,6 @@ except Exception as e:
     # Gestion des erreurs si le chargement des modèles échoue
     print(f"Erreur lors du chargement des modèles : {e}")
 
-# Créer une instance de l'application Flask
-app = Flask(__name__)
-
 # Définir une route de base pour vérifier que l'API fonctionne
 @app.route('/')
 def home():
@@ -35,11 +36,14 @@ def salut_toi(first_name):
 @app.route('/predict/<string:question>')
 def predict(question):
     try:
+        print(f"Question reçue : {question}")  # Log de la question
         # Encoder la question donnée en utilisant SBERT pour obtenir ses embeddings (représentation vectorielle)
         embeddings = sbert_model.encode([question])
+        print(f"Embeddings générés : {embeddings}")  # Log des embeddings
         
         # Utiliser le modèle Classifier Chain pour prédire les étiquettes de la question encodée
         predictions = chain_classifier.predict(embeddings)
+        print(f"Prédictions brutes : {predictions}")  # Log des prédictions
         
         # Transformer les prédictions pour retrouver les étiquettes d'origine (débinairisation)
         labels = mlb.inverse_transform(predictions)
@@ -48,9 +52,10 @@ def predict(question):
         return jsonify({'predictions': [list(label) for label in labels]})
     except Exception as e:
         # En cas d'erreur pendant la prédiction, retourner un message d'erreur JSON
+        print(f"Erreur lors de la prédiction : {str(e)}")  # Log d'erreur
         return jsonify({'error': str(e)})
 
 # Point d'entrée de l'application
 if __name__ == '__main__':
-    # Lancer l'application Flask en mode debug, accessible depuis n'importe quelle adresse IP sur le port 5001
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # Lancer l'application Flask en mode debug, accessible depuis n'importe quelle adresse IP
+    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get("PORT", 5001)))
