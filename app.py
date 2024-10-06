@@ -1,61 +1,48 @@
-from flask import Flask, request, jsonify  # Importation des modules nécessaires de Flask pour créer l'application web.
-import joblib  # Importation de joblib pour charger des modèles machine learning pré-entraînés.
-import numpy as np  # Importation de NumPy, souvent utilisé pour manipuler des tableaux et des vecteurs.
-import os  # Importation du module os pour gérer les chemins de fichiers.
-
-# Créer une instance de l'application Flask
-app = Flask(__name__)
+from flask import Flask, request, jsonify
+from sentence_transformers import SentenceTransformer
+import joblib
+import numpy as np
 
 # Charger les modèles
 try:
     # Charger le modèle Classifier Chain sauvegardé avec joblib
     chain_classifier = joblib.load('chain_classifier.pkl')
     
-    # Charger le modèle SBERT (Sentence-BERT) pour l'encodage des phrases
-    sbert_model = joblib.load('sbert_model.pkl')
+    # Charger directement le modèle SBERT à partir de SentenceTransformer
+    sbert_model = SentenceTransformer('all-MiniLM-L6-v2')  # Utilise le nom du modèle SBERT que tu as utilisé
     
-    # Charger l'encodeur multi-label Binarizer pour obtenir les étiquettes originales
+    # Charger l'encodeur multi-label Binarizer
     mlb = joblib.load('mlb.pkl')
     
-    print("Les modèles sont chargés correctement.")  # Confirmation que les modèles sont chargés avec succès.
+    print("Les modèles sont chargés correctement.")
 except Exception as e:
-    # Gestion des erreurs si le chargement des modèles échoue
     print(f"Erreur lors du chargement des modèles : {e}")
 
-# Définir une route de base pour vérifier que l'API fonctionne
+app = Flask(__name__)
+
 @app.route('/')
 def home():
     return "API de prédiction avec SBERT et Classifier Chain est en cours d'exécution."
 
-# Définir une route qui prend un paramètre `first_name` et renvoie un message de salutation
 @app.route('/salut_perso/<string:first_name>')
 def salut_toi(first_name):
-    return f"Salut {first_name} !"  # Retourne une salutation personnalisée
+    return f"Salut {first_name} !"
 
-# Définir une route de prédiction qui prend une question en tant que paramètre
 @app.route('/predict/<string:question>')
 def predict(question):
     try:
-        print(f"Question reçue : {question}")  # Log de la question
-        # Encoder la question donnée en utilisant SBERT pour obtenir ses embeddings (représentation vectorielle)
+        # Encoder la question avec SBERT
         embeddings = sbert_model.encode([question])
-        print(f"Embeddings générés : {embeddings}")  # Log des embeddings
         
-        # Utiliser le modèle Classifier Chain pour prédire les étiquettes de la question encodée
+        # Prédire les étiquettes avec Classifier Chain
         predictions = chain_classifier.predict(embeddings)
-        print(f"Prédictions brutes : {predictions}")  # Log des prédictions
         
-        # Transformer les prédictions pour retrouver les étiquettes d'origine (débinairisation)
+        # Transformer les prédictions en étiquettes originales
         labels = mlb.inverse_transform(predictions)
         
-        # Retourner les étiquettes sous forme de liste JSON
         return jsonify({'predictions': [list(label) for label in labels]})
     except Exception as e:
-        # En cas d'erreur pendant la prédiction, retourner un message d'erreur JSON
-        print(f"Erreur lors de la prédiction : {str(e)}")  # Log d'erreur
         return jsonify({'error': str(e)})
 
-# Point d'entrée de l'application
 if __name__ == '__main__':
-    # Lancer l'application Flask en mode debug, accessible depuis n'importe quelle adresse IP
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get("PORT", 5001)))
+    app.run(debug=True, host='0.0.0.0', port=5001)
